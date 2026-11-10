@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Flyover">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/png" href="./icons/icon-192.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<meta name="theme-color" content="#87ceeb">
+<title>Island Flyover</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div id="debug-hint" class="hidden"></div>
+<pre id="debug-list" class="hidden"></pre>
+<div id="ui">
+  <div id="hud" class="hidden">
+    <div id="warning" class="hidden">Turn back!</div>
+    <div id="timer">3:00</div>
+    <div id="counter"><b id="count-total">0 / 80</b><small id="count-flight"></small></div>
+    <div id="banner" class="hidden"><span class="new">NEW!</span><b id="banner-name"></b><small id="banner-region"></small></div>
+    <canvas id="radar" width="260" height="260"></canvas>
+    <div id="go">GO!</div>
+    <button id="btn-sound" class="hud-btn" data-action="sound" aria-label="Sound">&#128266;</button>
+    <button id="btn-book" class="hud-btn" data-action="hudbook" aria-label="Location Book">&#128214;</button>
+    <button id="btn-pause" class="hud-btn" data-action="pause">II</button>
+    <div id="joy-zone"></div>
+    <div id="joy-ghost" class="touch-only"></div>
+    <div id="joy-base"><div id="joy-knob"></div></div>
+    <div id="gas" class="touch-only"><span>HOLD<br>TO FLY</span></div>
+  </div>
+
+  <section id="screen-menu" class="screen" data-state="menu">
+    <h1>Island Flyover</h1>
+    <button data-action="fly">Fly</button>
+    <button data-action="book">Location Book</button>
+    <button data-action="howto">How to Play</button>
+    <button data-action="settings">Settings</button>
+    <button id="menu-sound" class="corner-btn" data-action="sound" aria-label="Sound">&#128266;</button>
+  </section>
+
+  <section id="screen-howto" class="screen hidden">
+    <h2>How to Play</h2>
+    <ul class="howto">
+      <li><b>Fly into the glowing floating icons</b> to unlock locations and fill your Location Book (80 to find).</li>
+      <li><b>Touch:</b> drag on the left to steer (sideways to bank and turn, up and down to pitch). Hold the right pad to fly; let go and the plane stalls and floats.</li>
+      <li><b>Keyboard:</b> arrow keys or WASD to steer, hold Space or Shift to fly, P or Esc to pause, B for the Book.</li>
+      <li>Each flight lasts <b>3 minutes</b>. The radar at the bottom shows nearby icons you haven't found.</li>
+      <li>Gold icons are secrets, hidden in tricky spots. Stay near the island or you'll be turned back.</li>
+    </ul>
+    <button data-action="closepanel">Back</button>
+  </section>
+
+  <section id="screen-settings" class="screen hidden">
+    <h2>Settings</h2>
+    <div class="opts">
+      <label><input type="checkbox" id="opt-sound" checked> Sound</label>
+      <label><input type="checkbox" id="opt-music"> Music</label>
+      <label><input type="checkbox" id="opt-radar" checked> Radar</label>
+      <label><input type="checkbox" id="opt-ghost" checked> Ghost icons</label>
+      <label><input type="checkbox" id="opt-hints"> Region hints in Book</label>
+      <label class="touch-only"><input type="checkbox" id="opt-tilt"> Device tilt steering</label>
+    </div>
+    <div class="row">
+      <button class="danger" data-action="resetprogress">Reset Progress</button>
+      <button data-action="closepanel">Back</button>
+    </div>
+  </section>
+
+  <section id="screen-confirm" class="screen hidden">
+    <h2>Reset progress?</h2>
+    <p id="confirm-text"></p>
+    <div class="row">
+      <button class="danger" data-action="resetyes">Yes, reset</button>
+      <button data-action="resetno">Cancel</button>
+    </div>
+  </section>
+
+  <section id="screen-countdown" class="screen clear hidden" data-state="countdown">
+    <div id="countdown-num">3</div>
+  </section>
+
+  <section id="screen-paused" class="screen hidden" data-state="paused">
+    <h2>Paused</h2>
+    <button data-action="resume">Resume</button>
+    <button data-action="book">Location Book</button>
+    <button data-action="restart">Restart Flight</button>
+    <button data-action="menu">Main Menu</button>
+  </section>
+
+  <section id="screen-flightOver" class="screen hidden" data-state="flightOver">
+    <h2>Time's up!</h2>
+    <p id="fo-summary"></p>
+    <button data-action="fly">Fly Again</button>
+    <button data-action="book">Open Book</button>
+    <button data-action="menu">Menu</button>
+  </section>
+
+  <section id="screen-book" class="screen hidden" data-state="book">
+    <div id="book">
+      <header>
+        <h2>Location Book</h2>
+        <div id="book-progress"><b id="book-count">Found 0 / 80</b><div class="bar"><i id="book-bar"></i></div></div>
+        <span id="book-badge" class="hidden">&#127941; Master Pilot</span>
+        <button data-action="closebook">Back</button>
+      </header>
+      <p id="book-congrats" class="hidden">Every location found. Congratulations, Master Pilot!</p>
+      <nav id="book-tabs"></nav>
+      <div id="book-grid"></div>
+    </div>
+    <div id="book-card" class="hidden"></div>
+  </section>
+
+  <section id="screen-win" class="screen hidden" data-state="win">
+    <div id="confetti"></div>
+    <div class="win-badge">&#127941;</div>
+    <h2>You Beat the Game!</h2>
+    <p>All 80 locations found. You are a Master Pilot!</p>
+    <ul id="win-stats"></ul>
+    <div class="row">
+      <button data-action="keepflying">Keep Flying</button>
+      <button data-action="book">Location Book</button>
+    </div>
+    <div class="row">
+      <button class="danger" data-action="resetprogress">Reset Progress</button>
+      <button data-action="menu">Main Menu</button>
+    </div>
+  </section>
+</div>
+
+<div id="rotate"><div class="phone"></div><p>Rotate your device to landscape to play</p></div>
+
+<script type="module" src="./js/main.js"></script>
+</body>
+</html>
